@@ -1,0 +1,149 @@
+{
+  "format": "reviewer-pack",
+  "formatVersion": 1,
+  "id": "bitsync-sample",
+  "version": 1,
+  "updated": "2026-10-24",
+  "course": {
+    "title": "Getting Started with BitSync",
+    "short": "Guide",
+    "code": "SAMPLE",
+    "icon": "★",
+    "color": "#0f8a7e",
+    "description": "A short sample course that shows everything a lesson can contain. Remove it any time from Settings."
+  },
+  "lessons": [
+    {
+      "id": "l1-reading",
+      "number": "1",
+      "title": "How lessons work",
+      "summary": "Reading, saving your place, and the different boxes you'll see.",
+      "minutes": 4,
+      "sections": [
+        {
+          "id": "reading",
+          "title": "Reading a lesson",
+          "blocks": [
+            { "type": "text", "text": "Each lesson is split into **parts**. Scroll through at your own pace — a part counts as *read* once you reach its end, and a small dot appears beside its title." },
+            { "type": "list", "items": [
+              "Tap the **list icon** (top right) to jump to any part.",
+              "Tap **Aa** to make the text bigger or smaller.",
+              "Tap the **bookmark** beside a part's title to keep it in the Saved tab."
+            ] },
+            { "type": "callout", "kind": "key", "text": "BitSync remembers where you stopped. The **Continue reading** card on the home screen brings you right back." }
+          ]
+        },
+        {
+          "id": "boxes",
+          "title": "The boxes you'll see",
+          "blocks": [
+            { "type": "callout", "kind": "plain", "text": "Hard ideas explained the way a friend would — no jargon." },
+            { "type": "callout", "kind": "easier", "text": "A shortcut or simpler method that still gets the right answer." },
+            { "type": "callout", "kind": "warning", "text": "A common mistake to avoid on the exam." },
+            { "type": "callout", "kind": "note", "text": "Extra background that's good to know." },
+            { "type": "term", "term": "Term", "def": "Definitions look like this, so they're easy to spot when you skim." },
+            { "type": "quote", "text": "The beautiful thing about learning is that no one can take it away from you.", "by": "B.B. King" }
+          ]
+        },
+        {
+          "id": "tables-code",
+          "title": "Tables and commands",
+          "blocks": [
+            { "type": "text", "text": "Wide tables and code scroll sideways on a phone, so nothing gets squeezed." },
+            { "type": "table", "caption": "Subnet masks", "headers": ["Prefix", "Mask", "Usable hosts"], "rows": [
+              ["/24", "255.255.255.0", "254"],
+              ["/26", "255.255.255.192", "62"],
+              ["/30", "255.255.255.252", "2"]
+            ] },
+            { "type": "code", "lang": "ios", "caption": "Router basics", "code": "enable\nconfigure terminal\nhostname R1\ninterface gigabitEthernet0/0\n ip address 192.168.1.1 255.255.255.0\n no shutdown\nend\ncopy running-config startup-config" },
+            { "type": "callout", "kind": "summary", "text": "That's everything a lesson can show. Next: math and worked examples." }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "l2-math",
+      "number": "2",
+      "title": "Math and worked examples",
+      "summary": "Formulas, and examples you reveal one step at a time.",
+      "minutes": 5,
+      "sections": [
+        {
+          "id": "formulas",
+          "title": "Formulas",
+          "blocks": [
+            { "type": "text", "text": "Math appears inline, like $y' + P(x)y = Q(x)$, or on its own line:" },
+            { "type": "math", "label": "Integrating factor", "tex": "\\mu(x) = e^{\\int P(x)\\,dx}" },
+            { "type": "callout", "kind": "plain", "text": "The integrating factor is a helper you multiply by so the left side becomes the derivative of one product, $\\left(\\mu y\\right)'$." }
+          ]
+        },
+        {
+          "id": "worked",
+          "title": "A worked example",
+          "blocks": [
+            { "type": "text", "text": "Tap **Show step 1** to go one step at a time. Every step tells you *what* to do and *why*." },
+            {
+              "type": "example",
+              "title": "Solve y' + 2y = 4",
+              "problem": "Solve $\\dfrac{dy}{dx} + 2y = 4$.",
+              "steps": [
+                { "do": "Identify $P(x)$ and $Q(x)$.", "math": "P(x) = 2, \\qquad Q(x) = 4", "why": "The equation already matches the standard form $y' + P(x)y = Q(x)$." },
+                { "do": "Find the integrating factor.", "math": "\\mu(x) = e^{\\int 2\\,dx} = e^{2x}", "why": "We drop the constant of integration here — any one integrating factor works." },
+                { "do": "Multiply every term by $e^{2x}$.", "math": "e^{2x}y' + 2e^{2x}y = 4e^{2x}", "why": "This makes the left side the derivative of a single product." },
+                { "do": "Rewrite the left side as one derivative.", "math": "\\left(e^{2x}y\\right)' = 4e^{2x}", "why": "By the product rule, $(e^{2x}y)' = e^{2x}y' + 2e^{2x}y$ — exactly our left side." },
+                { "do": "Integrate both sides.", "math": "e^{2x}y = 2e^{2x} + C", "why": "$\\int 4e^{2x}\\,dx = 2e^{2x}$, and the constant $C$ appears now." },
+                { "do": "Solve for $y$.", "math": "y = 2 + Ce^{-2x}", "why": "Divide every term by $e^{2x}$." }
+              ],
+              "answer": "$y = 2 + Ce^{-2x}$"
+            },
+            { "type": "callout", "kind": "easier", "text": "When $P$ and $Q$ are both constants, the equation is also **separable**: $\\dfrac{dy}{4-2y} = dx$. Use whichever method you find faster." }
+          ]
+        }
+      ]
+    }
+  ],
+  "extras": [
+    {
+      "id": "formula-sheet",
+      "kind": "reference",
+      "title": "Formula Sheet",
+      "description": "Every formula in one place.",
+      "sections": [
+        {
+          "id": "linear",
+          "title": "First-order linear",
+          "blocks": [
+            { "type": "math", "label": "Standard form", "tex": "y' + P(x)y = Q(x)" },
+            { "type": "math", "label": "Integrating factor", "tex": "\\mu = e^{\\int P\\,dx}" },
+            { "type": "math", "label": "Solution", "tex": "y = \\frac{1}{\\mu}\\left(\\int \\mu Q\\,dx + C\\right)" }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "practice",
+      "kind": "practice",
+      "title": "Practice",
+      "description": "Try it yourself, then check the solution.",
+      "sections": [
+        {
+          "id": "p1",
+          "title": "Problem 1",
+          "blocks": [
+            {
+              "type": "problem",
+              "problem": "Solve $y' + y = 3$.",
+              "hint": "Same pattern as the worked example — here $P(x) = 1$.",
+              "steps": [
+                { "do": "Integrating factor.", "math": "\\mu = e^{\\int 1\\,dx} = e^{x}", "why": "$P(x) = 1$." },
+                { "do": "Multiply through and combine.", "math": "\\left(e^{x}y\\right)' = 3e^{x}", "why": "The left side is the product-rule derivative of $e^{x}y$." },
+                { "do": "Integrate and solve for $y$.", "math": "e^{x}y = 3e^{x} + C \\;\\Rightarrow\\; y = 3 + Ce^{-x}", "why": "Divide by $e^{x}$ at the end." }
+              ],
+              "answer": "$y = 3 + Ce^{-x}$"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
