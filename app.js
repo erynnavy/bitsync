@@ -1,7 +1,7 @@
 'use strict';
 
 const APP_NAME = 'BitSync';
-const APP_VERSION = '1.2.6';
+const APP_VERSION = '1.2.7';
 const SUPPORTED_FORMAT = 1;
 // Drill engines this build can run. Network Administration will add 'subnetting', 'vlsm', 'cli'.
 const SUPPORTED_DRILLS = [];
@@ -719,7 +719,7 @@ function viewReader(p, entry) {
 
   for (const s of doc.sections) {
     h += `<section class="sec${isRead(pid, doc.id, s.id) ? ' is-read' : ''}" id="sec-${esc(s.id)}" data-sec="${esc(s.id)}">
-      <div class="sec-head"><span class="read-dot" title="Read"></span><h2>${inline(s.title)}</h2>
+      <div class="sec-head"><h2>${inline(s.title)}</h2>
         <button class="bm${bm.has(s.id) ? ' on' : ''}" data-act="bookmark" data-sec="${esc(s.id)}" aria-label="Save this part" aria-pressed="${bm.has(s.id)}">${ICON.bookmark}</button></div>
       ${renderBlocks(s.blocks)}
       <div class="sec-end" data-sec-end="${esc(s.id)}"></div></section>`;
