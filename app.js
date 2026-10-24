@@ -1,7 +1,7 @@
 'use strict';
 
 const APP_NAME = 'BitSync';
-const APP_VERSION = '1.0.0';
+const APP_VERSION = '1.1.0';
 const SUPPORTED_FORMAT = 1;
 // Drill engines this build can run. Network Administration will add 'subnetting', 'vlsm', 'cli'.
 const SUPPORTED_DRILLS = [];
@@ -44,6 +44,7 @@ const ICON = {
   bolt: svg('<path d="M13 3 4 14h7l-1 7 9-11h-7z"/>'),
   sync: svg('<path d="M20 11a8 8 0 0 0-14.3-4.5L4 8"/><path d="M4 4v4h4"/><path d="M4 13a8 8 0 0 0 14.3 4.5L20 16"/><path d="M20 20v-4h-4"/>'),
   phone: svg('<rect x="7" y="2.5" width="10" height="19" rx="2.5"/><path d="M11 18.5h2"/>'),
+  image: svg('<rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="9" cy="10" r="1.8"/><path d="m21 16-5-5-9 9"/>'),
   shield: svg('<path d="M12 3 5 6v6c0 4.5 3 7.5 7 9 4-1.5 7-4.5 7-9V6z"/>'),
 };
 
@@ -212,6 +213,21 @@ const sortedPacks = () => [...state.packs.values()].sort((a, b) => a.course.titl
 const courseColor = (p) => (/^#[0-9a-f]{3,8}$/i.test((p.course && p.course.color) || '') ? p.course.color : '#d85a30');
 const courseIcon = (p) => esc(String(p.course.icon || p.course.short || p.course.title).slice(0, 2));
 const courseShort = (p) => p.course.short || p.course.title;
+const STYLES = ['default', 'notebook', 'gallery', 'essay', 'security', 'planner', 'terminal'];
+const courseStyle = (p) => (STYLES.includes(p.course.style) ? p.course.style : 'default');
+// The reference extra a course pins as a floating button in its lessons (e.g. DE's formula sheet).
+const quickRef = (p) => (p.extras || []).find((x) => x.id === p.course.quickRef && x.kind === 'reference');
+
+function packImages(p) {
+  const out = [];
+  const walk = (blocks, doc, sec) => (blocks || []).forEach((b) => {
+    if (!b) return;
+    if (b.type === 'image' && typeof b.src === 'string' && b.src.startsWith('data:image/')) out.push({ b, doc, sec });
+    if (Array.isArray(b.blocks)) walk(b.blocks, doc, sec);
+  });
+  for (const { doc } of readableDocs(p)) for (const sec of doc.sections || []) walk(sec.blocks, doc, sec);
+  return out;
+}
 
 // Lessons then extras, in pack order. `n` is the 1-based position among lessons.
 function docList(p) {
@@ -254,7 +270,11 @@ function nextUp(p) {
 
 /* ================= block rendering ================= */
 
-const CALLOUTS = { plain: 'In plain words', easier: 'Easier way', warning: 'Watch out', key: 'Key idea', note: 'Note', summary: 'Summary' };
+const CALLOUTS = {
+  plain: 'In plain words', easier: 'Easier way', warning: 'Watch out', key: 'Key idea', note: 'Note', summary: 'Summary',
+  threat: 'Threat', defense: 'Defense',
+};
+const CODE_LABELS = { ios: 'Cisco IOS', verilog: 'Verilog', vhdl: 'VHDL', text: 'Text' };
 
 function renderBlocks(blocks, nested) {
   return (blocks || []).map((b) => renderBlock(b, nested)).join('');
@@ -288,11 +308,15 @@ function renderBlock(b, nested) {
       const rows = (b.rows || []).map((r) => `<tr>${(Array.isArray(r) ? r : [r]).map((c) => `<td>${inline(c)}</td>`).join('')}</tr>`).join('');
       return `<div class="table-wrap">${b.caption ? `<div class="tcap">${inline(b.caption)}</div>` : ''}<table>${head ? `<thead><tr>${head}</tr></thead>` : ''}<tbody>${rows}</tbody></table></div>`;
     }
-    case 'code':
-      return `<figure class="code">${b.caption ? `<figcaption>${inline(b.caption)}</figcaption>` : ''}<pre><code>${esc(b.code)}</code></pre></figure>`;
+    case 'code': {
+      const label = b.caption ? inline(b.caption) : esc(CODE_LABELS[b.lang] || b.lang || 'Code');
+      return `<figure class="code"><figcaption>${label}</figcaption><pre><code>${esc(b.code)}</code></pre></figure>`;
+    }
     case 'image': {
       const ok = typeof b.src === 'string' && /^data:image\/(png|jpe?g|webp|gif|svg\+xml);base64,/i.test(b.src);
-      const img = ok ? `<img src="${esc(b.src)}" alt="${esc(b.alt || '')}" loading="lazy">` : `<div class="img-missing">Image unavailable</div>`;
+      const img = ok
+        ? `<img src="${esc(b.src)}" alt="${esc(b.alt || '')}" loading="lazy" data-act="zoom-img" data-cap="${esc(plain(b.caption || b.alt || ''))}">`
+        : `<div class="img-missing">Image unavailable</div>`;
       return `<figure class="img">${img}${b.caption ? `<figcaption>${inline(b.caption)}</figcaption>` : ''}</figure>`;
     }
     case 'quote':
@@ -481,6 +505,8 @@ function render() {
     document.body.dataset.view = 'reader';
     html = viewReader(state.packs.get(a), findDoc(state.packs.get(a), b));
     after = () => startReader(state.packs.get(a), b, c);
+  } else if (name === 'g' && state.packs.has(a)) {
+    html = viewGallery(state.packs.get(a));
   } else if (name === 'search') {
     tab = 'search';
     html = viewSearch();
@@ -547,7 +573,7 @@ function viewHome() {
     h += `<h2 class="list-label">Your courses</h2><div class="course-list">`;
     for (const p of packs) {
       const st = courseStats(p);
-      h += `<a class="card course-card" style="--c:${courseColor(p)}" href="#/c/${enc(p.id)}">
+      h += `<a class="card course-card" style="--c:${courseColor(p)}" data-style="${courseStyle(p)}" href="#/c/${enc(p.id)}">
         <span class="badge">${courseIcon(p)}</span>
         <span class="cc-body"><span class="cc-title">${esc(p.course.title)}</span>
           <span class="cc-meta">${p.course.code ? esc(p.course.code) + ' · ' : ''}${p.lessons.length} lesson${p.lessons.length === 1 ? '' : 's'}</span>
@@ -568,7 +594,7 @@ function viewCourse(p) {
   const go = up || { doc: p.lessons[0], sec: '' };
   const goLabel = !started ? 'Start first lesson' : up ? 'Continue' : 'Read again from the start';
 
-  let h = `<div style="--c:${courseColor(p)}">
+  let h = `<div style="--c:${courseColor(p)}" data-style="${courseStyle(p)}">
     <header class="appbar with-back"><a class="icon-btn" href="#/" aria-label="Back">${ICON.back}</a>
       <div class="appbar-title"><span class="t">${esc(courseShort(p))}</span></div></header>
     <section class="hero">
@@ -592,8 +618,13 @@ function viewCourse(p) {
   h += `</ol>`;
 
   const extras = p.extras || [];
-  if (extras.length) {
+  const images = packImages(p).length;
+  if (extras.length || images) {
     h += `<h2 class="list-label">Also in this course</h2><div class="lesson-list">`;
+    if (images) {
+      h += `<a class="card lesson-row extra-card" href="#/g/${enc(p.id)}"><span class="xi">${ICON.image}</span><span class="lr-body">
+        <span class="lr-title">Gallery</span><span class="lr-sum">All ${images} image${images === 1 ? '' : 's'} from the lessons in one place.</span></span>${ICON.chev}</a>`;
+    }
     for (const x of extras) {
       const icon = { reference: ICON.sheet, practice: ICON.pencil, drill: ICON.bolt }[x.kind] || ICON.layers;
       const runnable = x.kind !== 'drill' || SUPPORTED_DRILLS.includes(x.drill);
@@ -621,7 +652,7 @@ function viewReader(p, entry) {
   const st = docStats(pid, doc);
   const bm = new Set(state.bookmarks.filter((x) => x.packId === pid && x.docId === doc.id).map((x) => x.sectionId));
 
-  let h = `<div style="--c:${courseColor(p)}">
+  let h = `<div style="--c:${courseColor(p)}" data-style="${courseStyle(p)}">
     <header class="appbar with-back reader-bar"><a class="icon-btn" href="#/c/${enc(pid)}" aria-label="Back to course">${ICON.back}</a>
       <div class="appbar-title"><span class="eyebrow">${esc(courseShort(p))} · ${esc(docEyebrow(entry))}</span><span class="t">${esc(plain(doc.title))}</span></div>
       <button class="icon-btn" data-act="textsize" aria-label="Text size"><span class="aa">Aa</span></button>
@@ -648,8 +679,37 @@ function viewReader(p, entry) {
         ${prev ? `<a class="card prev" href="#/r/${enc(pid)}/${enc(prev.doc.id)}"><small>Previous · ${esc(docEyebrow(prev))}</small><span class="dn-title">${inline(prev.doc.title)}</span></a>` : ''}
         ${next ? `<a class="card next" href="#/r/${enc(pid)}/${enc(next.doc.id)}"><small>Next · ${esc(docEyebrow(next))}</small><span class="dn-title">${inline(next.doc.title)}</span></a>`
                : `<a class="card next" href="#/c/${enc(pid)}"><small>Finished</small><span class="dn-title">Back to course</span></a>`}
-      </nav></footer></article></div>`;
-  return h;
+      </nav></footer></article>`;
+  const ref = quickRef(p);
+  if (ref && ref.id !== doc.id) h += `<button class="fab" data-act="quickref">${ICON.sheet}<span>${esc(plain(ref.title))}</span></button>`;
+  return h + `</div>`;
+}
+
+function openQuickRef() {
+  const p = reader && reader.p;
+  const ref = p && quickRef(p);
+  if (!ref) return;
+  const body = ref.sections.map((s) => `<h3 class="sub">${inline(s.title)}</h3>${renderBlocks(s.blocks)}`).join('');
+  const sheet = openSheet(`<h2>${inline(ref.title)}</h2><div class="reader in-sheet">${body}</div>
+    <div class="actions"><a class="btn block" href="#/r/${enc(p.id)}/${enc(ref.id)}">Open as a page</a></div>`);
+  sheet.style.setProperty('--c', courseColor(p));
+  sheet.dataset.style = courseStyle(p);
+}
+
+/* ---- gallery ---- */
+
+function viewGallery(p) {
+  const items = packImages(p);
+  let h = `<div style="--c:${courseColor(p)}" data-style="${courseStyle(p)}">
+    <header class="appbar with-back"><a class="icon-btn" href="#/c/${enc(p.id)}" aria-label="Back">${ICON.back}</a>
+      <div class="appbar-title"><span class="eyebrow">${esc(courseShort(p))}</span><span class="t">Gallery</span></div></header>
+    <div class="page"><div class="gallery-grid">`;
+  for (const { b, doc, sec } of items) {
+    h += `<a class="gallery-item" href="#/r/${enc(p.id)}/${enc(doc.id)}/${enc(sec.id)}">
+      <img src="${esc(b.src)}" alt="${esc(b.alt || '')}" loading="lazy">
+      <span class="gi-cap">${inline(b.caption || sec.title)}</span><span class="gi-where">${inline(doc.title)}</span></a>`;
+  }
+  return h + `</div>${items.length ? '' : '<p class="muted-center">No images in this course yet.</p>'}</div></div>`;
 }
 
 let reader = null;
@@ -977,6 +1037,13 @@ const ACTIONS = {
   'step-all': (el) => revealSteps(el.closest('.ex'), Infinity),
   'hint': (el) => { const h = $('.ex-hint', el.closest('.ex')); if (h) { h.hidden = false; h.classList.add('reveal'); el.remove(); } },
   'toc': openToc,
+  'quickref': openQuickRef,
+  'zoom-img': (el) => {
+    const sheet = openSheet(`<figure class="zoom"><img src="${esc(el.getAttribute('src'))}" alt="${esc(el.alt)}">
+      ${el.dataset.cap ? `<figcaption>${esc(el.dataset.cap)}</figcaption>` : ''}</figure>
+      <div class="actions"><button class="btn block" data-act="sheet-close">Close</button></div>`);
+    sheet.classList.add('wide');
+  },
   'textsize': openTextSize,
   'goto-sec': (el) => { closeSheet(); scrollToSection(el.dataset.sec, true); },
   'bookmark': (el) => {

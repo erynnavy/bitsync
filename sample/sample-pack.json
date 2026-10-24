@@ -2,7 +2,7 @@
   "format": "reviewer-pack",
   "formatVersion": 1,
   "id": "bitsync-sample",
-  "version": 1,
+  "version": 2,
   "updated": "2026-10-24",
   "course": {
     "title": "Getting Started with BitSync",
@@ -10,6 +10,8 @@
     "code": "SAMPLE",
     "icon": "★",
     "color": "#0f8a7e",
+    "style": "notebook",
+    "quickRef": "formula-sheet",
     "description": "A short sample course that shows everything a lesson can contain. Remove it any time from Settings."
   },
   "lessons": [
