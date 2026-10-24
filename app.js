@@ -1,7 +1,7 @@
 'use strict';
 
 const APP_NAME = 'BitSync';
-const APP_VERSION = '1.2.0';
+const APP_VERSION = '1.2.3';
 const SUPPORTED_FORMAT = 1;
 // Drill engines this build can run. Network Administration will add 'subnetting', 'vlsm', 'cli'.
 const SUPPORTED_DRILLS = [];
@@ -342,9 +342,17 @@ function renderBlock(b, nested) {
     case 'problem':
       return renderExample(b, b.type === 'problem');
     case 'table': {
-      const head = (b.headers || []).map((h) => `<th>${inline(h)}</th>`).join('');
-      const rows = (b.rows || []).map((r) => `<tr>${(Array.isArray(r) ? r : [r]).map((c) => `<td>${inline(c)}</td>`).join('')}</tr>`).join('');
-      return `<div class="table-wrap">${b.caption ? `<div class="tcap">${inline(b.caption)}</div>` : ''}<table>${head ? `<thead><tr>${head}</tr></thead>` : ''}<tbody>${rows}</tbody></table></div>`;
+      const headers = b.headers || [];
+      const rows = (b.rows || []).map((r) => (Array.isArray(r) ? r : [r]));
+      // Tables of short values stay a grid on phones; tables with sentences turn into cards (see styles.css).
+      const compact = headers.length <= 4 && rows.every((r) => r.every((c) => plain(c).length <= 24));
+      const head = headers.map((h) => `<th>${inline(h)}</th>`).join('');
+      const body = rows.map((r) => `<tr>${r.map((c, i) => {
+        const empty = plain(c) === '';
+        return `<td data-label="${esc(plain(headers[i] || ''))}"${empty ? ' class="empty"' : ''}>${inline(c)}</td>`;
+      }).join('')}</tr>`).join('');
+      const kind = compact ? 'is-grid' : headers.length > 2 ? 'is-cards is-labelled' : 'is-cards';
+      return `<div class="table-wrap ${kind}">${b.caption ? `<div class="tcap">${inline(b.caption)}</div>` : ''}<table>${head ? `<thead><tr>${head}</tr></thead>` : ''}<tbody>${body}</tbody></table></div>`;
     }
     case 'code': {
       const label = b.caption ? inline(b.caption) : esc(CODE_LABELS[b.lang] || b.lang || 'Code');
@@ -769,7 +777,9 @@ function startReader(p, docId, secId) {
   const saved = state.progress[p.id] && state.progress[p.id].pos[doc.id];
   const target = secId || (!docStats(p.id, doc).done && saved) || '';
   if (target && document.getElementById('sec-' + target)) {
+    // Jump once now and again after late layout (fonts, images, math) has settled.
     requestAnimationFrame(() => scrollToSection(target, false));
+    setTimeout(() => scrollToSection(target, false), 350);
   } else {
     window.scrollTo(0, 0);
   }
@@ -1084,10 +1094,24 @@ const ACTIONS = {
   'toc': openToc,
   'quickref': openQuickRef,
   'zoom-img': (el) => {
-    const sheet = openSheet(`<figure class="zoom"><img src="${esc(el.getAttribute('src'))}" alt="${esc(el.alt)}">
-      ${el.dataset.cap ? `<figcaption>${esc(el.dataset.cap)}</figcaption>` : ''}</figure>
+    const sheet = openSheet(`<figure class="zoom"><div class="zoom-pan"><img src="${esc(el.getAttribute('src'))}" alt="${esc(el.alt)}" data-act="zoom-toggle"></div>
+      ${el.dataset.cap ? `<figcaption>${esc(el.dataset.cap)}</figcaption>` : ''}
+      <p class="zoom-hint">Tap the picture to zoom in or out. Drag to look around.</p></figure>
       <div class="actions"><button class="btn block" data-act="sheet-close">Close</button></div>`);
     sheet.classList.add('wide');
+  },
+  'zoom-toggle': (el) => {
+    const zoom = el.closest('.zoom');
+    const pan = $('.zoom-pan', zoom);
+    // Keep the tapped spot roughly under the finger when zooming in.
+    const rect = el.getBoundingClientRect();
+    const fx = rect.width ? (lastTap.x - rect.left) / rect.width : 0.5;
+    const fy = rect.height ? (lastTap.y - rect.top) / rect.height : 0.5;
+    zoom.classList.toggle('full');
+    if (zoom.classList.contains('full')) {
+      pan.scrollLeft = fx * el.offsetWidth - pan.clientWidth / 2;
+      pan.scrollTop = fy * el.offsetHeight - pan.clientHeight / 2;
+    }
   },
   'textsize': openTextSize,
   'goto-sec': (el) => { closeSheet(); scrollToSection(el.dataset.sec, true); },
@@ -1166,7 +1190,9 @@ const ACTIONS = {
   'dismiss-install': () => { prefs.set('install-dismissed', '1'); render(); },
 };
 
+let lastTap = { x: 0, y: 0 };
 document.addEventListener('click', (ev) => {
+  lastTap = { x: ev.clientX, y: ev.clientY };
   const el = ev.target.closest('[data-act]');
   if (!el || !ACTIONS[el.dataset.act]) return;
   ev.preventDefault();

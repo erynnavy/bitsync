@@ -232,8 +232,26 @@ body[data-view="reader"] #tabs { display: none; }
 .table-wrap .tcap { padding: 10px 12px 0; font-size: .8em; font-weight: 700; color: var(--text-3); }
 .table-wrap table { border-collapse: collapse; width: 100%; font-size: .92em; }
 .table-wrap th, .table-wrap td { text-align: left; padding: 9px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
-.table-wrap th { font-size: .86em; color: var(--text-2); white-space: nowrap; }
+.table-wrap th { font-size: .86em; color: var(--text-2); }
 .table-wrap tr:last-child td { border-bottom: 0; }
+
+/* On phones, tables with sentences become a stack of cards so nothing scrolls sideways. */
+@media (max-width: 640px) {
+  .table-wrap.is-cards { border: 0; background: transparent; overflow: visible; border-radius: 0; }
+  .table-wrap.is-cards .tcap { padding: 0 2px 8px; }
+  .table-wrap.is-cards table, .table-wrap.is-cards tbody, .table-wrap.is-cards tr, .table-wrap.is-cards td { display: block; width: auto; }
+  .table-wrap.is-cards thead { display: none; }
+  .table-wrap.is-cards tr { margin: 0 0 8px; padding: 12px 14px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+  .table-wrap.is-cards table td { padding: 0; border: 0; text-align: left; }
+  .table-wrap.is-cards table td:first-child { font-weight: 700; color: color-mix(in srgb, var(--c) 70%, var(--text)); margin-bottom: 4px; }
+  .table-wrap.is-cards td.empty { display: none; }
+  .table-wrap.is-labelled td + td { margin-top: 8px; }
+  .table-wrap.is-labelled td + td::before {
+    content: attr(data-label); display: block; margin-bottom: 1px; font-size: .72em; font-weight: 800; letter-spacing: .05em;
+    text-transform: uppercase; color: var(--text-3);
+  }
+  .table-wrap.is-grid th, .table-wrap.is-grid td { padding: 8px 10px; }
+}
 figure { margin: 1.1em 0; }
 figcaption { font-size: .8em; color: var(--text-3); margin-top: 6px; }
 .code figcaption { margin: 0 0 6px; font-weight: 700; }
@@ -340,10 +358,13 @@ body[data-view="reader"] #toast { bottom: calc(var(--safe-bottom) + 16px); }
 .fab svg { width: 20px; height: 20px; }
 .reader.in-sheet { padding: 0; font-size: calc(16px * var(--fs-scale)); }
 .reader.in-sheet h3.sub:first-child { margin-top: .4em; }
-.sheet.wide { max-width: 760px; }
+.sheet.wide { max-width: 760px; max-height: 94vh; }
 .zoom { margin: 0; text-align: center; }
-.zoom img { max-width: 100%; max-height: 64vh; border-radius: 10px; }
+.zoom-pan { overflow: auto; max-height: 74vh; border-radius: 10px; background: var(--surface-2); -webkit-overflow-scrolling: touch; }
+.zoom-pan img { display: block; width: 100%; max-width: none; cursor: zoom-in; }
+.zoom.full .zoom-pan img { width: 230%; cursor: zoom-out; }
 .zoom figcaption { margin-top: 10px; font-size: .9rem; color: var(--text-2); }
+.zoom-hint { margin: 6px 0 0; font-size: .8rem; color: var(--text-3); }
 .img img { cursor: zoom-in; }
 .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
 .gallery-item { display: block; }
@@ -473,9 +494,9 @@ body[data-view="reader"] #toast { bottom: calc(var(--safe-bottom) + 16px); }
 /* ---------- compare block: weak vs better ---------- */
 .cmp { margin: 1.2em 0; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; }
 .cmp-title { padding: 10px 14px 0; font-weight: 700; }
-.cmp-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; }
+.cmp-row { padding: 10px 14px; }
 .cmp-row + .cmp-row { border-top: 1px dashed var(--border); }
-.cmp-tag { flex: none; min-width: 58px; text-align: center; margin-top: .2em; padding: 2px 8px; border-radius: 6px; font-size: .68em; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.cmp-tag { display: inline-block; margin-bottom: 4px; padding: 2px 8px; border-radius: 6px; font-size: .68em; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
 .cmp-weak .cmp-tag { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); color: var(--danger); }
 .cmp-better .cmp-tag { background: color-mix(in srgb, var(--easier) 16%, var(--surface)); color: var(--easier); }
 .cmp-text { flex: 1; min-width: 0; }
