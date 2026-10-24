@@ -268,11 +268,11 @@ blockquote cite { display: block; font-style: normal; font-size: .85em; color: v
 .doc-end .done-mark svg { stroke-width: 2.6; }
 .doc-end h2 { margin: 0 0 4px; font-size: 1.1em; }
 .doc-end p { margin: 0 0 18px; color: var(--text-2); font-size: .9em; }
-.doc-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: left; font-size: 1rem; }
-.doc-nav a { padding: 12px 14px; min-height: 64px; }
-.doc-nav a.next { grid-column: 2; text-align: right; }
-.doc-nav small { display: block; color: var(--text-3); font-weight: 700; font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; }
-.doc-nav .dn-title { display: block; font-weight: 650; font-size: .92rem; line-height: 1.3; margin-top: 2px; }
+.doc-nav { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; max-width: 420px; margin: 0 auto; }
+.doc-nav > span:first-child { display: none; }
+.doc-nav:has(> span:first-child) { grid-template-columns: 1fr; max-width: 204px; }
+.doc-nav .btn { min-height: 50px; font-size: 1rem; }
+.doc-nav .btn:not(.primary) { background: var(--surface); border: 1px solid var(--border); }
 
 /* ---------- search / saved ---------- */
 .search-box { position: relative; margin: 4px 0 14px; }
@@ -401,7 +401,10 @@ body[data-view="reader"] #toast { bottom: calc(var(--safe-bottom) + 16px); }
 [data-style="gallery"] .doc-head .eyebrow, [data-style="gallery"] .hero .code { letter-spacing: .18em; font-family: var(--font); }
 [data-style="gallery"] .sec-head { border-top: 0; flex-direction: row; }
 [data-style="gallery"] .sec-head h2 { font-weight: 600; font-size: 1.32em; }
-[data-style="gallery"] .sec-head h2::before { content: ""; display: block; width: 36px; height: 3px; background: var(--c); margin-bottom: 12px; border-radius: 2px; }
+[data-style="gallery"] .sec-head h2::before { content: ""; display: block; width: 36px; height: 3px; background: var(--c); margin-bottom: 12px; border-radius: 2px; transition: width .3s; }
+/* The accent bar shows read state (it lengthens), so the separate dot isn't needed. */
+[data-style="gallery"] .sec-head .read-dot { display: none; }
+[data-style="gallery"] .sec.is-read .sec-head h2::before { width: 72px; background: var(--easier); }
 [data-style="gallery"] .img { margin-left: -18px; margin-right: -18px; }
 [data-style="gallery"] .img img { border-radius: 0; width: 100%; }
 [data-style="gallery"] .img figcaption { padding: 0 18px; text-align: center; font-style: italic; font-size: .85em; }
@@ -431,9 +434,12 @@ body[data-view="reader"] #toast { bottom: calc(var(--safe-bottom) + 16px); }
 /* Security — CNS: monospace labels, coded sections, striped threat boxes */
 [data-style="security"] .reader { counter-reset: sc; }
 [data-style="security"] .sec-head h2::before {
-  counter-increment: sc; content: "SEC-0" counter(sc); display: block; margin-bottom: 4px;
+  counter-increment: sc; content: "SEC-" counter(sc, decimal-leading-zero); display: block; margin-bottom: 4px;
   font: 700 .62em/1 var(--mono); letter-spacing: .08em; color: color-mix(in srgb, var(--c) 80%, var(--text));
 }
+/* The code label shows read state, so the separate dot isn't needed. */
+[data-style="security"] .sec-head .read-dot { display: none; }
+[data-style="security"] .sec.is-read .sec-head h2::before { content: "SEC-" counter(sc, decimal-leading-zero) " · READ"; color: var(--easier); }
 [data-style="security"] .doc-head .eyebrow, [data-style="security"] .co-title, [data-style="security"] .ex-tag,
 [data-style="security"] .hero .code, [data-style="security"] .math-label { font-family: var(--mono); }
 [data-style="security"] .callout.k-threat, [data-style="security"] .callout.k-warning {

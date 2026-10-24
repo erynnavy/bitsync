@@ -1,7 +1,7 @@
 'use strict';
 
 const APP_NAME = 'BitSync';
-const APP_VERSION = '1.2.3';
+const APP_VERSION = '1.2.6';
 const SUPPORTED_FORMAT = 1;
 // Drill engines this build can run. Network Administration will add 'subnetting', 'vlsm', 'cli'.
 const SUPPORTED_DRILLS = [];
@@ -727,11 +727,11 @@ function viewReader(p, entry) {
 
   h += `<footer class="doc-end"><div class="done-mark">${ICON.check}</div>
       <h2>End of ${entry.kind === 'lesson' ? 'lesson' : esc(plain(doc.title))}</h2>
-      <p>${next ? 'Up next is below.' : 'That’s everything in this course for now.'}</p>
+      <p>${next ? 'Nice work. Keep going when you’re ready.' : 'That’s everything in this course for now.'}</p>
       <nav class="doc-nav">
-        ${prev ? `<a class="card prev" href="#/r/${enc(pid)}/${enc(prev.doc.id)}"><small>Previous · ${esc(docEyebrow(prev))}</small><span class="dn-title">${inline(prev.doc.title)}</span></a>` : ''}
-        ${next ? `<a class="card next" href="#/r/${enc(pid)}/${enc(next.doc.id)}"><small>Next · ${esc(docEyebrow(next))}</small><span class="dn-title">${inline(next.doc.title)}</span></a>`
-               : `<a class="card next" href="#/c/${enc(pid)}"><small>Finished</small><span class="dn-title">Back to course</span></a>`}
+        ${prev ? `<a class="btn" href="#/r/${enc(pid)}/${enc(prev.doc.id)}" aria-label="Previous: ${esc(plain(prev.doc.title))}">Previous</a>` : '<span></span>'}
+        ${next ? `<a class="btn primary" href="#/r/${enc(pid)}/${enc(next.doc.id)}" aria-label="Next: ${esc(plain(next.doc.title))}">Next</a>`
+               : `<a class="btn primary" href="#/c/${enc(pid)}">Finish</a>`}
       </nav></footer></article>`;
   const ref = quickRef(p);
   if (ref && ref.id !== doc.id) h += `<button class="fab" data-act="quickref">${ICON.sheet}<span>${esc(plain(ref.title))}</span></button>`;
