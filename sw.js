@@ -1,6 +1,6 @@
 // BitSync service worker: makes the app work offline after the first visit.
 // Bump VERSION whenever any app file changes so phones pick up the update.
-const VERSION = '1.2.7';
+const VERSION = '1.3.0';
 const APP_CACHE = 'bitsync-app-' + VERSION;
 const CDN_CACHE = 'bitsync-cdn-v1';
 
@@ -9,6 +9,7 @@ const APP_FILES = [
   'index.html',
   'styles.css',
   'app.js',
+  'drills.js',
   'manifest.webmanifest',
   'icons/icon.svg',
   'icons/icon-192.png',

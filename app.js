@@ -1,10 +1,11 @@
 'use strict';
 
 const APP_NAME = 'BitSync';
-const APP_VERSION = '1.2.7';
+const APP_VERSION = '1.3.0';
 const SUPPORTED_FORMAT = 1;
-// Drill engines this build can run. Network Administration will add 'subnetting', 'vlsm', 'cli'.
-const SUPPORTED_DRILLS = [];
+// Drill engines this build can run (defined in drills.js: 'cli', 'subnetting', 'vlsm').
+const SUPPORTED_DRILLS = typeof DRILL_ENGINES === 'undefined' ? [] : Object.keys(DRILL_ENGINES);
+const drillRunnable = (x) => SUPPORTED_DRILLS.includes(x.drill) && DRILL_ENGINES[x.drill].valid(x);
 
 /* ================= helpers ================= */
 
@@ -547,13 +548,17 @@ function currentRoute() {
 function render() {
   if (cleanupView) { cleanupView(); cleanupView = null; }
   closeSheet();
-  const [name, a, b, c] = currentRoute();
+  const [name, a, b, c, d] = currentRoute();
   let tab = 'home';
   let html;
   let after = null;
   document.body.dataset.view = name || 'home';
+  const drillDoc = name === 'd' && state.packs.has(a) && (state.packs.get(a).extras || []).find((x) => x.id === b && x.kind === 'drill' && drillRunnable(x));
   if (name === 'c' && state.packs.has(a)) {
     html = viewCourse(state.packs.get(a));
+  } else if (drillDoc) {
+    html = viewDrill(state.packs.get(a), drillDoc, c, d);
+    after = () => startDrill(state.packs.get(a), drillDoc, c, d);
   } else if (name === 'r' && state.packs.has(a) && findDoc(state.packs.get(a), b)) {
     document.body.dataset.view = 'reader';
     html = viewReader(state.packs.get(a), findDoc(state.packs.get(a), b));
@@ -680,13 +685,14 @@ function viewCourse(p) {
     }
     for (const x of extras) {
       const icon = { reference: ICON.sheet, practice: ICON.pencil, drill: ICON.bolt }[x.kind] || ICON.layers;
-      const runnable = x.kind !== 'drill' || SUPPORTED_DRILLS.includes(x.drill);
+      const runnable = x.kind !== 'drill' || drillRunnable(x);
       const inner = `<span class="xi">${icon}</span><span class="lr-body"><span class="lr-title">${inline(x.title)}</span>
         ${x.description ? `<span class="lr-sum">${inline(x.description)}</span>` : ''}
         ${runnable ? '' : `<span class="lr-meta"><span class="pill">Needs an app update</span></span>`}</span>`;
-      h += runnable && x.kind !== 'drill'
-        ? `<a class="card lesson-row extra-card" href="#/r/${enc(p.id)}/${enc(x.id)}">${inner}${ICON.chev}</a>`
-        : `<div class="card lesson-row extra-card${runnable ? '' : ' disabled'}">${inner}</div>`;
+      const href = x.kind === 'drill' ? `#/d/${enc(p.id)}/${enc(x.id)}` : `#/r/${enc(p.id)}/${enc(x.id)}`;
+      h += runnable
+        ? `<a class="card lesson-row extra-card" href="${href}">${inner}${ICON.chev}</a>`
+        : `<div class="card lesson-row extra-card disabled">${inner}</div>`;
     }
     h += `</div>`;
   }
@@ -1188,6 +1194,7 @@ const ACTIONS = {
     render();
   },
   'dismiss-install': () => { prefs.set('install-dismissed', '1'); render(); },
+  ...(typeof DRILL_ACTIONS === 'undefined' ? {} : DRILL_ACTIONS),
 };
 
 let lastTap = { x: 0, y: 0 };
