@@ -463,9 +463,82 @@ body[data-view="reader"] #toast { bottom: calc(var(--safe-bottom) + 16px); }
 [data-style="terminal"] .table-wrap table { font-family: var(--mono); font-size: .84em; }
 [data-style="terminal"] .badge { font-family: var(--mono); border-radius: 8px; }
 
+/* ---------- code lines + HDL colours (code blocks are always dark) ---------- */
+.code .line { display: block; min-height: 1.6em; white-space: pre; }
+.tk-k { color: #c792ea; font-weight: 600; }
+.tk-c { color: #7f8ba3; font-style: italic; }
+.tk-s { color: #c3e88d; }
+.tk-n { color: #f9a26c; }
+
+/* ---------- compare block: weak vs better ---------- */
+.cmp { margin: 1.2em 0; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); overflow: hidden; }
+.cmp-title { padding: 10px 14px 0; font-weight: 700; }
+.cmp-row { display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; }
+.cmp-row + .cmp-row { border-top: 1px dashed var(--border); }
+.cmp-tag { flex: none; min-width: 58px; text-align: center; margin-top: .2em; padding: 2px 8px; border-radius: 6px; font-size: .68em; font-weight: 800; letter-spacing: .05em; text-transform: uppercase; }
+.cmp-weak .cmp-tag { background: color-mix(in srgb, var(--danger) 14%, var(--surface)); color: var(--danger); }
+.cmp-better .cmp-tag { background: color-mix(in srgb, var(--easier) 16%, var(--surface)); color: var(--easier); }
+.cmp-text { flex: 1; min-width: 0; }
+.cmp-weak .cmp-text { color: var(--text-2); }
+.cmp-why { padding: 10px 14px 12px; border-top: 1px solid var(--border); background: var(--surface-2); font-size: .93em; color: var(--text-2); }
+.cmp-why .why-label { font-weight: 800; font-size: .76em; letter-spacing: .05em; text-transform: uppercase; color: var(--text-3); margin-right: 6px; }
+
+/* Circuit — HDL: blueprint grid, components labelled U1, U2…, code as an editor with line numbers */
+[data-style="circuit"] { --bp: color-mix(in srgb, var(--c) 12%, transparent); --bp-fine: color-mix(in srgb, var(--c) 6%, transparent); }
+[data-style="circuit"] .reader, [data-style="circuit"] .hero {
+  background-image:
+    linear-gradient(var(--bp) 1px, transparent 1px), linear-gradient(90deg, var(--bp) 1px, transparent 1px),
+    linear-gradient(var(--bp-fine) 1px, transparent 1px), linear-gradient(90deg, var(--bp-fine) 1px, transparent 1px);
+  background-size: 60px 60px, 60px 60px, 12px 12px, 12px 12px;
+}
+[data-style="circuit"] .reader { counter-reset: ic; }
+[data-style="circuit"] .sec-head h2::before {
+  counter-increment: ic; content: "U" counter(ic); display: inline-block; margin-right: .5em; padding: 0 .45em; vertical-align: .12em;
+  font: 700 .66em/1.7 var(--mono); color: color-mix(in srgb, var(--c) 85%, var(--text)); background: var(--surface);
+  border: 2px solid var(--c); border-left: 4px dotted var(--c); border-right: 4px dotted var(--c); border-radius: 3px;
+}
+[data-style="circuit"] .doc-head h1, [data-style="circuit"] .hero h1, [data-style="circuit"] .appbar-title .t { font-family: var(--mono); letter-spacing: -.03em; }
+[data-style="circuit"] .code { border-radius: 12px; overflow: hidden; background: #0f1420; border: 1px solid color-mix(in srgb, var(--c) 40%, #262c38); }
+[data-style="circuit"] .code figcaption {
+  display: inline-block; margin: 0; padding: 7px 14px; background: #0f1420; color: #c8d3e6; font: 600 .74em/1.4 var(--mono);
+  border-top: 2px solid var(--c); border-right: 1px solid #262c38;
+}
+[data-style="circuit"] .code pre { border-radius: 0; background: #0f1420; border-top: 1px solid #262c38; }
+[data-style="circuit"] .code pre code { counter-reset: ln; }
+[data-style="circuit"] .code .line::before {
+  counter-increment: ln; content: counter(ln); display: inline-block; width: 2em; margin-right: 14px; padding-right: 8px;
+  text-align: right; color: #4f5b73; border-right: 1px solid #262c38;
+}
+[data-style="circuit"] .table-wrap table { font-family: var(--mono); }
+[data-style="circuit"] .table-wrap td, [data-style="circuit"] .table-wrap th { text-align: center; }
+[data-style="circuit"] .table-wrap th { background: color-mix(in srgb, var(--c) 12%, var(--surface)); color: var(--text); }
+[data-style="circuit"] .badge { font-family: var(--mono); border-radius: 4px; border-left: 4px dotted rgba(255, 255, 255, .55); border-right: 4px dotted rgba(255, 255, 255, .55); }
+
+/* Document — technical writing: a printed report page with numbered headings */
+[data-style="document"] .reader {
+  margin: 10px 10px 0; padding: 6px 20px 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 4px;
+  box-shadow: 0 2px 14px rgba(20, 20, 30, .07); font-family: var(--serif); line-height: 1.75; counter-reset: dsec;
+}
+[data-style="document"] .doc-head { border-bottom: 2px solid var(--text); padding-bottom: 14px; margin-bottom: 6px; }
+[data-style="document"] .doc-head h1, [data-style="document"] .sec-head h2, [data-style="document"] .reader h3.sub { font-family: var(--font); }
+[data-style="document"] .sec { counter-increment: dsec; counter-reset: dsub; }
+[data-style="document"] .sec-head { border-top: 0; }
+[data-style="document"] .sec-head h2::before { content: counter(dsec) ".0"; margin-right: .55em; color: var(--c); font-variant-numeric: tabular-nums; }
+[data-style="document"] .reader h3.sub { counter-increment: dsub; }
+[data-style="document"] .reader h3.sub::before { content: counter(dsec) "." counter(dsub); margin-right: .55em; color: var(--c); }
+[data-style="document"] .callout.k-note, [data-style="document"] .callout.k-key {
+  background: transparent; border-left: 2px dotted var(--k); border-radius: 0; font-style: italic; font-size: .95em; padding: 4px 0 4px 14px;
+}
+[data-style="document"] .cmp-weak .cmp-text { text-decoration: underline wavy color-mix(in srgb, var(--danger) 55%, transparent); text-underline-offset: 4px; }
+[data-style="document"] .cmp-better .cmp-text { background: color-mix(in srgb, var(--easier) 10%, transparent); border-radius: 4px; padding: 0 4px; }
+[data-style="document"] .cmp { font-family: var(--font); }
+[data-style="document"] .badge { border-radius: 3px 12px 3px 3px; font-family: var(--serif); }
+[data-style="document"] .doc-end { font-family: var(--font); }
+
 @media (min-width: 700px) {
   .page { padding: 8px 24px 24px; }
   .reader { padding: 4px 28px 0; }
   .course-list { grid-template-columns: 1fr 1fr; }
   [data-style="gallery"] .img { margin-left: -28px; margin-right: -28px; }
+  [data-style="document"] .reader { padding: 10px 36px 12px; margin: 14px 18px 0; }
 }

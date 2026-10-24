@@ -1,7 +1,7 @@
 'use strict';
 
 const APP_NAME = 'BitSync';
-const APP_VERSION = '1.1.0';
+const APP_VERSION = '1.2.0';
 const SUPPORTED_FORMAT = 1;
 // Drill engines this build can run. Network Administration will add 'subnetting', 'vlsm', 'cli'.
 const SUPPORTED_DRILLS = [];
@@ -213,7 +213,7 @@ const sortedPacks = () => [...state.packs.values()].sort((a, b) => a.course.titl
 const courseColor = (p) => (/^#[0-9a-f]{3,8}$/i.test((p.course && p.course.color) || '') ? p.course.color : '#d85a30');
 const courseIcon = (p) => esc(String(p.course.icon || p.course.short || p.course.title).slice(0, 2));
 const courseShort = (p) => p.course.short || p.course.title;
-const STYLES = ['default', 'notebook', 'gallery', 'essay', 'security', 'planner', 'terminal'];
+const STYLES = ['default', 'notebook', 'gallery', 'essay', 'security', 'planner', 'terminal', 'circuit', 'document'];
 const courseStyle = (p) => (STYLES.includes(p.course.style) ? p.course.style : 'default');
 // The reference extra a course pins as a floating button in its lessons (e.g. DE's formula sheet).
 const quickRef = (p) => (p.extras || []).find((x) => x.id === p.course.quickRef && x.kind === 'reference');
@@ -274,7 +274,45 @@ const CALLOUTS = {
   plain: 'In plain words', easier: 'Easier way', warning: 'Watch out', key: 'Key idea', note: 'Note', summary: 'Summary',
   threat: 'Threat', defense: 'Defense',
 };
-const CODE_LABELS = { ios: 'Cisco IOS', verilog: 'Verilog', vhdl: 'VHDL', text: 'Text' };
+const CODE_LABELS = { ios: 'Cisco IOS', verilog: 'Verilog', systemverilog: 'SystemVerilog', vhdl: 'VHDL', text: 'Text' };
+
+const HDL_KEYWORDS = {
+  verilog: new Set(('module endmodule input output inout wire reg logic assign always always_ff always_comb initial begin end '
+    + 'if else case casez casex endcase default for while repeat forever posedge negedge or and not parameter localparam integer '
+    + 'genvar generate endgenerate function endfunction task endtask timescale').split(' ')),
+  vhdl: new Set(('library use entity is port in out inout buffer end architecture of signal begin process if then elsif else '
+    + 'case when others std_logic std_logic_vector unsigned signed integer boolean downto to variable constant component map '
+    + 'generic for loop wait until rising_edge falling_edge and or not xor nand nor xnor type array all with select').split(' ')),
+};
+const HDL_TOKENS = {
+  verilog: /(\/\/[^\n]*|\/\*[\s\S]*?\*\/)|("(?:[^"\\\n]|\\.)*")|(\d*'[sS]?[bdhoBDHO][0-9a-fA-F_xzXZ?]+|\b\d+(?:\.\d+)?\b)|(`?[A-Za-z_$][A-Za-z0-9_$]*)/g,
+  vhdl: /(--[^\n]*)|("[^"\n]*")|('[01XZUWLH-]'|\b\d+(?:\.\d+)?\b|\b[xXbBoO]"[0-9a-fA-F_]+")|([A-Za-z_][A-Za-z0-9_]*)/g,
+};
+
+// Colours Verilog/VHDL keywords, comments, strings and numbers. Returns HTML (input is escaped here).
+function highlightHdl(code, lang) {
+  const kw = HDL_KEYWORDS[lang];
+  const wrap = (cls, text) => text.split('\n').map((t) => `<span class="${cls}">${esc(t)}</span>`).join('\n');
+  let out = '';
+  let last = 0;
+  String(code).replace(HDL_TOKENS[lang], (m, com, str, num, word, at) => {
+    out += esc(code.slice(last, at));
+    last = at + m.length;
+    if (com) out += wrap('tk-c', m);
+    else if (str) out += wrap('tk-s', m);
+    else if (num) out += wrap('tk-n', m);
+    else if (kw.has(lang === 'vhdl' ? word.toLowerCase() : word.replace(/^`/, ''))) out += wrap('tk-k', m);
+    else out += esc(m);
+    return m;
+  });
+  return out + esc(code.slice(last));
+}
+
+function renderCode(b) {
+  const lang = b.lang === 'systemverilog' ? 'verilog' : b.lang;
+  const html = HDL_KEYWORDS[lang] ? highlightHdl(String(b.code || ''), lang) : esc(b.code);
+  return html.split('\n').map((l) => `<span class="line">${l}</span>`).join('');
+}
 
 function renderBlocks(blocks, nested) {
   return (blocks || []).map((b) => renderBlock(b, nested)).join('');
@@ -310,7 +348,14 @@ function renderBlock(b, nested) {
     }
     case 'code': {
       const label = b.caption ? inline(b.caption) : esc(CODE_LABELS[b.lang] || b.lang || 'Code');
-      return `<figure class="code"><figcaption>${label}</figcaption><pre><code>${esc(b.code)}</code></pre></figure>`;
+      return `<figure class="code"><figcaption>${label}</figcaption><pre><code>${renderCode(b)}</code></pre></figure>`;
+    }
+    case 'compare': {
+      const [weakLabel, betterLabel] = Array.isArray(b.labels) && b.labels.length === 2 ? b.labels : ['Weak', 'Better'];
+      return `<div class="cmp">${b.title ? `<div class="cmp-title">${inline(b.title)}</div>` : ''}
+        <div class="cmp-row cmp-weak"><span class="cmp-tag">${inline(weakLabel)}</span><div class="cmp-text">${inline(b.weak)}</div></div>
+        <div class="cmp-row cmp-better"><span class="cmp-tag">${inline(betterLabel)}</span><div class="cmp-text">${inline(b.better)}</div></div>
+        ${b.why ? `<div class="cmp-why"><span class="why-label">Why</span>${inline(b.why)}</div>` : ''}</div>`;
     }
     case 'image': {
       const ok = typeof b.src === 'string' && /^data:image\/(png|jpe?g|webp|gif|svg\+xml);base64,/i.test(b.src);
@@ -390,7 +435,7 @@ let lastQuery = '';
 function blockText(b) {
   if (!b || typeof b !== 'object') return '';
   const asTex = (t) => (t ? texText(t) : '');
-  const parts = [b.text, b.term, b.def, b.title, b.problem, b.hint, b.answer, b.caption, b.label, asTex(b.tex), b.code, b.by, b.alt];
+  const parts = [b.text, b.term, b.def, b.title, b.problem, b.hint, b.answer, b.caption, b.label, asTex(b.tex), b.code, b.by, b.alt, b.weak, b.better, b.why];
   if (Array.isArray(b.items)) parts.push(...b.items);
   if (Array.isArray(b.headers)) parts.push(...b.headers);
   if (Array.isArray(b.rows)) b.rows.forEach((r) => Array.isArray(r) && parts.push(...r));
